@@ -1,0 +1,122 @@
+---
+title: "Analysis"
+author: "Sonam Tenzin"
+date: "2025-01-01"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+In this analysis, we will explore various factors that could be related to stroke occurrences. We will visualize data distributions using boxplots and bar plots, and then build a predictive model using Random Forest to predict the likelihood of a stroke.
+
+## Data Preprocessing
+
+First, let's load the dataset and perform necessary preprocessing, including checking for missing values and handling them.
+
+```{r}
+# Load dataset
+data <- read.csv("filepath")
+
+# Check for missing values
+colSums(is.na(data))
+
+# Handle missing values (e.g., fill BMI missing values with median)
+data$bmi[is.na(data$bmi)] <- median(data$bmi, na.rm = TRUE)
+
+# Convert categorical columns to factors
+data$gender <- as.factor(data$gender)
+data$hypertension <- as.factor(data$hypertension)
+data$heart_disease <- as.factor(data$heart_disease)
+data$ever_married <- as.factor(data$ever_married)
+data$work_type <- as.factor(data$work_type)
+data$Residence_type <- as.factor(data$Residence_type)
+data$smoking_status <- as.factor(data$smoking_status)
+data$stroke <- as.factor(data$stroke)  # Target variable
+
+# Boxplot for Age by Stroke
+ggplot(data, aes(x = stroke, y = age, fill = stroke)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Age by Stroke", x = "Stroke", y = "Age") +
+  theme_minimal()
+# Boxplot for Average Glucose Level by Stroke
+ggplot(data, aes(x = stroke, y = avg_glucose_level, fill = stroke)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Avg Glucose Level by Stroke", x = "Stroke", y = "Avg Glucose Level") +
+  theme_minimal()
+# Boxplot for BMI by Stroke
+ggplot(data, aes(x = stroke, y = bmi, fill = stroke)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of BMI by Stroke", x = "Stroke", y = "BMI") +
+  theme_minimal()
+# Bar plot for Gender vs Stroke
+ggplot(data, aes(x = gender, fill = stroke)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Gender vs Stroke", x = "Gender", y = "Count") +
+  theme_minimal()
+# Bar plot for Hypertension vs Stroke
+ggplot(data, aes(x = hypertension, fill = stroke)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Hypertension vs Stroke", x = "Hypertension", y = "Count") +
+  theme_minimal()
+# Bar plot for Heart Disease vs Stroke
+ggplot(data, aes(x = heart_disease, fill = stroke)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Heart Disease vs Stroke", x = "Heart Disease", y = "Count") +
+  theme_minimal()
+
+### Model Building
+
+# Install necessary packages
+install.packages("caret")
+library(caret)
+
+# Split the data (60% train, 40% test)
+set.seed(123)  # For reproducibility
+trainIndex <- createDataPartition(data$stroke, p = 0.6, list = FALSE)
+
+# Create training and testing datasets
+trainData <- data[trainIndex, ]
+testData <- data[-trainIndex, ]
+
+### Training the Random Forest Model
+
+library(randomForest)
+
+# Train random forest model
+model_rf <- randomForest(stroke ~ ., data = trainData, importance = TRUE)
+
+# Variable importance plot
+varImpPlot(model_rf)
+
+### Model prediction and Evaluation
+
+# Predict using the model
+predictions <- predict(model_rf, testData, type = "class")
+
+# Confusion Matrix
+confusionMatrix(predictions, testData$stroke)
+
+# Calculate Accuracy
+accuracy <- sum(predictions == testData$stroke) / nrow(testData)
+print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
+
+
+### Explanation:
+1. **YAML Header**: At the top of the document, you specify the title and output format (e.g., HTML).
+2. **R Code Chunks**: Code chunks are enclosed within triple backticks (` ```{r} ... ``` `). These chunks will execute the R code when knitting the document.
+3. **Markdown Syntax**: Use markdown for sections like `## Introduction`, `## Data Preprocessing`, etc. to provide a clear structure to the document.
+4. **Inline R Code**: For displaying dynamic results, you can embed R code like the accuracy result directly into the markdown text by using `r round(accuracy * 100, 2)`.
+
+### How to Knit the Document:
+1. Save the above content into a `.Rmd` file.
+2. Open the file in RStudio.
+3. Click the **Knit** button to generate an HTML (or PDF) output.
+
+This will generate a well-organized report that contains your analysis, visualizations, and model results in an easily readable format.
+
